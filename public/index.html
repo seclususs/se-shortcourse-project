@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Manajemen Tugas - Hari 1</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Sistem Manajemen Tugas</h1>
+            <p>Hari 1: Dasar-Dasar Rekayasa Perangkat Lunak</p>
+        </header>
+
+        <main>
+            <!-- Wadah Pesan Notifikasi (Sukses/Gagal) -->
+            <div id="messages" class="messages-container"></div>
+
+            <!-- Statistik Tugas -->
+            <section class="stats-section">
+                <h2>Ringkasan Tugas</h2>
+                <div id="taskStats" class="stats-container">
+                    <!-- Statistik akan muncul di sini secara otomatis -->
+                </div>
+            </section>
+
+            <!-- Formulir Pembuatan Tugas -->
+            <section class="form-section">
+                <h2>Buat Tugas Baru</h2>
+                <form id="taskForm" class="task-form">
+                    <div class="form-group">
+                        <label for="taskTitle">Judul Tugas *</label>
+                        <input type="text" id="taskTitle" name="title" required placeholder="Masukkan judul tugas...">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="taskDescription">Keterangan</label>
+                        <textarea id="taskDescription" name="description" placeholder="Masukkan detail tugas (opsional)..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="taskPriority">Prioritas</label>
+                        <select id="taskPriority" name="priority">
+                            <option value="low">Rendah</option>
+                            <option value="medium" selected>Sedang</option>
+                            <option value="high">Tinggi</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Simpan Tugas</button>
+                </form>
+            </section>
+
+            <!-- Filter / Penyaring Tugas -->
+            <section class="filter-section">
+                <h2>Saring Tugas</h2>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="all">Semua</button>
+                    <button class="filter-btn" data-filter="pending">Belum Selesai</button>
+                    <button class="filter-btn" data-filter="completed">Selesai</button>
+                    <button class="filter-btn" data-filter="high">Prioritas Tinggi</button>
+                    <button class="filter-btn" data-filter="medium">Prioritas Sedang</button>
+                    <button class="filter-btn" data-filter="low">Prioritas Rendah</button>
+                </div>
+            </section>
+
+            <!-- Daftar Tugas -->
+            <section class="tasks-section">
+                <div class="tasks-header">
+                    <h2>Daftar Tugas Anda</h2>
+                    <button id="clearAllTasks" class="btn btn-danger">Hapus Semua</button>
+                </div>
+                <div id="taskList" class="task-list">
+                    <!-- Tugas-tugas akan muncul di sini -->
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2024 Kursus Singkat Rekayasa Perangkat Lunak - Implementasi Hari 1</p>
+        </footer>
+    </div>
+
+    <!-- Memuat logika aplikasi secara berurutan -->
+    <script src="src/models/Task.js"></script>
+    <script src="src/utils/StorageManager.js"></script>
+    <script src="src/services/TaskService.js"></script>
+    <script src="src/app.js"></script>
+</body>
+</html>
