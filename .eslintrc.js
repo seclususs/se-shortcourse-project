@@ -9,11 +9,22 @@ module.exports = {
         'eslint:recommended'
     ],
     globals: {
+        // Day 1 Globals
         Task: 'readonly',
         TaskService: 'readonly',
         StorageManager: 'readonly',
         handleTaskToggle: 'writable',
-        handleTaskDelete: 'writable'
+        handleTaskDelete: 'writable',
+        
+        // Day 2 Globals
+        User: 'readonly',
+        EnhancedTask: 'readonly',
+        EnhancedStorageManager: 'readonly',
+        UserRepository: 'readonly',
+        TaskRepository: 'readonly',
+        UserController: 'readonly',
+        TaskController: 'readonly',
+        TaskView: 'readonly'
     },
     parserOptions: {
         ecmaVersion: 'latest',

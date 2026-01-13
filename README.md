@@ -22,7 +22,7 @@ That's it! You should see a welcome page with the course outline.
 ## Project Structure
 
 ```
-starter-project/
+se-shortcourse-project/
 ├── package.json          # Project configuration and dependencies
 ├── server.js            # Basic development server
 ├── README.md            # This file
@@ -31,8 +31,11 @@ starter-project/
 │   └── styles.css       # Basic styling
 ├── src/                 # Source code (you'll add files here)
 │   ├── app.js          # Main application entry point (currently empty)
+│   ├── controllers/    # Handle application logic and user input (Day 2+)
 │   ├── models/         # Data models (Day 1+)
+│   ├── repositories/   # Data access abstraction layer (Day 2+)
 │   ├── services/       # Business logic (Day 1+)
+│   ├── views/          # UI components and DOM manipulation (Day 2+)
 │   └── utils/          # Utility functions (Day 1+)
 └── tests/              # Test files (Day 3+)
 ```

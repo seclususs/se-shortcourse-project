@@ -1,317 +1,312 @@
 /**
- * Aplikasi Utama (App.js)
- * Menghubungkan semua komponen: Tampilan, Data, dan Logika.
+ * Aplikasi Utama Day 2 - Implementasi MVC.
+ * * @description Orchestrator utama yang menginisialisasi semua komponen (Storage, Repository, Controller, View) dan menangani event global.
  */
 
-// Variabel Global
-let taskService;
-let storageManager;
+const app = {
+  storage: null,
+  userRepository: null,
+  taskRepository: null,
+  userController: null,
+  taskController: null,
+  taskView: null,
+  currentUser: null,
+};
 
 /**
- * Memulai Aplikasi
+ * Menginisialisasi seluruh aplikasi.
+ * Dipanggil saat DOM siap.
  */
 function initializeApp() {
-    console.log('🚀 Memulai Sistem Manajemen Tugas...');
-    
-    // Siapkan penyimpanan
-    storageManager = new StorageManager('aplikasiTugas');
-    
-    // Siapkan layanan tugas
-    taskService = new TaskService(storageManager);
-    
-    // Siapkan pendengar tombol (klik, submit, dll)
-    setupEventListeners();
-    
-    // Dengarkan perubahan data agar tampilan selalu update
-    taskService.addListener(handleTaskServiceEvent);
-    
-    // Tampilkan data awal
-    renderTaskList();
-    renderTaskStats();
-    
-    console.log('✅ Aplikasi siap digunakan!');
+  console.log("🚀 Memulai Aplikasi Manajemen Tugas Day 2...");
+
+  try {
+    // 1. Setup Layer Penyimpanan & Data
+    app.storage = new EnhancedStorageManager("taskAppDay2", "2.0");
+    app.userRepository = new UserRepository(app.storage);
+    app.taskRepository = new TaskRepository(app.storage);
+
+    // 2. Setup Layer Logika (Controllers)
+    app.userController = new UserController(app.userRepository);
+    app.taskController = new TaskController(
+      app.taskRepository,
+      app.userRepository
+    );
+
+    // 3. Setup Layer Tampilan (View)
+    app.taskView = new TaskView(app.taskController, app.userController);
+
+    // 4. Setup Event Listeners Global
+    setupAuthEventListeners();
+
+    // 5. Buat data demo jika penyimpanan masih kosong
+    createDemoDataIfNeeded();
+
+    // Tampilkan halaman login sebagai tampilan awal
+    showLoginSection();
+
+    console.log("✅ Aplikasi berhasil diinisialisasi!");
+  } catch (error) {
+    console.error("❌ Gagal inisialisasi:", error);
+    alert("Gagal memulai aplikasi: " + error.message);
+  }
 }
 
 /**
- * Menyiapkan Pendengar Tombol (Event Listeners)
+ * Mengatur semua event listener untuk tombol dan form.
  */
-function setupEventListeners() {
-    // Formulir pembuatan tugas
-    const taskForm = document.getElementById('taskForm');
-    if (taskForm) {
-        taskForm.addEventListener('submit', handleTaskFormSubmit);
-    }
-    
-    // Tombol hapus semua
-    const clearAllBtn = document.getElementById('clearAllTasks');
-    if (clearAllBtn) {
-        clearAllBtn.addEventListener('click', handleClearAllTasks);
-    }
-    
-    // Tombol filter
-    const filterButtons = document.querySelectorAll('.filter-btn');
-    filterButtons.forEach(btn => {
-        btn.addEventListener('click', handleFilterChange);
+function setupAuthEventListeners() {
+  // Tombol Login
+  document.getElementById("loginBtn")?.addEventListener("click", handleLogin);
+
+  // Tombol Register (Buka Modal)
+  document.getElementById("registerBtn")?.addEventListener("click", () => {
+    document.getElementById("registerModal").style.display = "flex";
+  });
+
+  // Tombol Logout
+  document.getElementById("logoutBtn")?.addEventListener("click", handleLogout);
+
+  // Form Registrasi
+  document
+    .getElementById("registerForm")
+    ?.addEventListener("submit", handleRegister);
+
+  // Tutup Modal
+  document
+    .getElementById("closeRegisterModal")
+    ?.addEventListener("click", () => {
+      document.getElementById("registerModal").style.display = "none";
     });
-}
 
-/**
- * Saat Formulir Tugas Dikirim
- */
-function handleTaskFormSubmit(event) {
-    event.preventDefault(); // Mencegah halaman refresh
-    
-    const formData = new FormData(event.target);
-    const title = formData.get('title')?.trim();
-    const description = formData.get('description')?.trim();
-    const priority = formData.get('priority') || 'medium';
-    
-    if (!title) {
-        showMessage('Harap masukkan judul tugas', 'error');
-        return;
-    }
-    
-    try {
-        const task = taskService.createTask(title, description, priority);
-        showMessage(`Tugas "${task.title}" berhasil dibuat!`, 'success');
-        
-        // Kosongkan formulir
-        event.target.reset();
-        
-        // Fokuskan kursor kembali ke input judul
-        const titleInput = document.getElementById('taskTitle');
-        if (titleInput) titleInput.focus();
-        
-    } catch (error) {
-        showMessage(`Gagal membuat tugas: ${error.message}`, 'error');
-    }
-}
+  // Form Buat Task
+  document
+    .getElementById("taskForm")
+    ?.addEventListener("submit", handleCreateTask);
 
-/**
- * Saat Ada Perubahan Data
- */
-function handleTaskServiceEvent(eventType, data) {
-    // Render ulang tampilan jika ada data berubah
-    renderTaskList();
-    renderTaskStats();
-}
-
-/**
- * Saat Status Tugas Diubah (Selesai/Belum)
- */
-function handleTaskToggle(taskId) {
-    const task = taskService.getTaskById(taskId);
-    if (!task) return;
-    
-    try {
-        taskService.updateTask(taskId, { completed: !task.completed });
-        const status = task.completed ? 'belum selesai' : 'selesai';
-        showMessage(`Status tugas diubah menjadi ${status}`, 'info');
-    } catch (error) {
-        showMessage(`Gagal mengubah status: ${error.message}`, 'error');
-    }
-}
-
-/**
- * Saat Tugas Dihapus
- */
-function handleTaskDelete(taskId) {
-    const task = taskService.getTaskById(taskId);
-    if (!task) return;
-    
-    if (confirm(`Apakah Anda yakin ingin menghapus tugas "${task.title}"?`)) {
-        if (taskService.deleteTask(taskId)) {
-            showMessage('Tugas berhasil dihapus', 'info');
-        } else {
-            showMessage('Gagal menghapus tugas', 'error');
-        }
-    }
-}
-
-/**
- * Saat Menghapus Semua Tugas
- */
-function handleClearAllTasks() {
-    const taskCount = taskService.getAllTasks().length;
-    
-    if (taskCount === 0) {
-        showMessage('Tidak ada tugas untuk dihapus', 'info');
-        return;
-    }
-    
-    if (confirm(`Yakin ingin menghapus SEMUA (${taskCount}) tugas? Tindakan ini tidak bisa dibatalkan.`)) {
-        taskService.clearAllTasks();
-        showMessage('Semua tugas berhasil dibersihkan', 'info');
-    }
-}
-
-/**
- * Saat Filter Berubah
- */
-function handleFilterChange(event) {
-    const filterType = event.target.dataset.filter;
-    
-    // Ubah tombol yang aktif
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.classList.remove('active');
+  // Filter Kategori/Status
+  document.querySelectorAll(".filter-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      document
+        .querySelectorAll(".filter-btn")
+        .forEach((b) => b.classList.remove("active"));
+      e.target.classList.add("active");
+      app.taskView.currentFilter = e.target.dataset.filter;
+      app.taskView.renderTasks();
     });
-    event.target.classList.add('active');
-    
-    // Tampilkan ulang daftar dengan filter
-    renderTaskList(filterType);
-}
+  });
 
-/**
- * Menampilkan Daftar Tugas (Rendering)
- */
-function renderTaskList(filter = 'all') {
-    const taskListContainer = document.getElementById('taskList');
-    if (!taskListContainer) return;
-    
-    let tasks = taskService.getAllTasks();
-    
-    // Terapkan filter
-    switch (filter) {
-        case 'pending': // Belum Selesai
-            tasks = tasks.filter(task => !task.completed);
-            break;
-        case 'completed': // Selesai
-            tasks = tasks.filter(task => task.completed);
-            break;
-        case 'high': // Tinggi
-            tasks = tasks.filter(task => task.priority === 'high');
-            break;
-        case 'medium': // Sedang
-            tasks = tasks.filter(task => task.priority === 'medium');
-            break;
-        case 'low': // Rendah
-            tasks = tasks.filter(task => task.priority === 'low');
-            break;
+  // Pencarian
+  document.getElementById("searchInput")?.addEventListener("input", (e) => {
+    const query = e.target.value;
+    const response = app.taskController.searchTasks(query);
+    if (response.success) {
+      // Render hasil pencarian secara manual ke list
+      const tasksHTML = response.data
+        .map((t) => app.taskView._createTaskHTML(t))
+        .join("");
+      document.getElementById("taskList").innerHTML =
+        tasksHTML || app.taskView._getEmptyStateHTML();
+      app.taskView._setupTaskEventListeners();
     }
-    
-    // Urutkan: Tugas terbaru paling atas
-    tasks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    
-    if (tasks.length === 0) {
-        taskListContainer.innerHTML = `
-            <div class="empty-state">
-                <p>Tidak ada tugas ditemukan</p>
-                <small>Silakan buat tugas baru menggunakan formulir di atas</small>
-            </div>
-        `;
-        return;
+  });
+
+  // Tombol Aksi Cepat: Overdue
+  document.getElementById("showOverdueBtn")?.addEventListener("click", () => {
+    const res = app.taskController.getOverdueTasks();
+    if (res.success) {
+      if (res.count === 0)
+        app.taskView.showMessage(
+          "Tidak ada tugas terlambat! Bagus.",
+          "success"
+        );
+      else {
+        app.taskView.showMessage(
+          `Ada ${res.count} tugas terlambat.`,
+          "warning"
+        );
+        const tasksHTML = res.data
+          .map((t) => app.taskView._createTaskHTML(t))
+          .join("");
+        document.getElementById("taskList").innerHTML = tasksHTML;
+        app.taskView._setupTaskEventListeners();
+      }
     }
-    
-    const taskHTML = tasks.map(task => createTaskHTML(task)).join('');
-    taskListContainer.innerHTML = taskHTML;
+  });
+
+  // Tombol Aksi Cepat: Due Soon
+  document.getElementById("showDueSoonBtn")?.addEventListener("click", () => {
+    const res = app.taskController.getTasksDueSoon(3);
+    if (res.success && res.data.length > 0) {
+      app.taskView.showMessage(
+        `${res.count} tugas mendekati deadline.`,
+        "info"
+      );
+      const tasksHTML = res.data
+        .map((t) => app.taskView._createTaskHTML(t))
+        .join("");
+      document.getElementById("taskList").innerHTML = tasksHTML;
+      app.taskView._setupTaskEventListeners();
+    } else {
+      app.taskView.showMessage(
+        "Aman, tidak ada deadline dalam 3 hari ke depan.",
+        "success"
+      );
+    }
+  });
+
+  // Tombol Export Data
+  document.getElementById("exportDataBtn")?.addEventListener("click", () => {
+    const data = app.storage.exportData();
+    const dataStr = JSON.stringify(data, null, 2);
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "task-backup.json";
+    a.click();
+    URL.revokeObjectURL(url);
+    app.taskView.showMessage("Data berhasil diekspor!", "success");
+  });
 }
 
 /**
- * Membuat Kode HTML untuk Satu Kotak Tugas
+ * Handler event login.
  */
-function createTaskHTML(task) {
-    const priorityClass = `priority-${task.priority}`;
-    const completedClass = task.completed ? 'completed' : '';
-    
-    // Format tanggal ke Indonesia
-    const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
-    const createdDate = new Date(task.createdAt).toLocaleDateString('id-ID', dateOptions);
-    
-    // Terjemahkan prioritas untuk tampilan
-    const priorityLabel = {
-        'high': 'Tinggi',
-        'medium': 'Sedang',
-        'low': 'Rendah'
-    }[task.priority] || task.priority;
-    
-    return `
-        <div class="task-item ${priorityClass} ${completedClass}" data-task-id="${task.id}">
-            <div class="task-content">
-                <div class="task-header">
-                    <h3 class="task-title">${escapeHtml(task.title)}</h3>
-                    <span class="task-priority">${priorityLabel}</span>
-                </div>
-                ${task.description ? `<p class="task-description">${escapeHtml(task.description)}</p>` : ''}
-                <div class="task-meta">
-                    <small>Dibuat: ${createdDate}</small>
-                </div>
-            </div>
-            <div class="task-actions">
-                <button class="btn btn-toggle" onclick="handleTaskToggle('${task.id}')" title="${task.completed ? 'Tandai belum selesai' : 'Tandai selesai'}">
-                    ${task.completed ? 'Batal Selesai' : 'Selesai'}
-                </button>
-                <button class="btn btn-delete" onclick="handleTaskDelete('${task.id}')" title="Hapus tugas">
-                    Hapus
-                </button>
-            </div>
-        </div>
-    `;
+function handleLogin() {
+  const username = document.getElementById("usernameInput").value;
+  const response = app.userController.login(username);
+  if (response.success) {
+    app.currentUser = response.data;
+    app.taskController.setCurrentUser(app.currentUser.id);
+    showMainContent();
+    loadAssignees();
+    app.taskView.refresh();
+    app.taskView.showMessage(response.message, "success");
+  } else {
+    app.taskView.showMessage(response.error, "error");
+  }
 }
 
 /**
- * Menampilkan Statistik Tugas
+ * Handler event logout.
  */
-function renderTaskStats() {
-    const statsContainer = document.getElementById('taskStats');
-    if (!statsContainer) return;
-    
-    const stats = taskService.getTaskStats();
-    
-    statsContainer.innerHTML = `
-        <div class="stats-grid">
-            <div class="stat-item">
-                <span class="stat-number">${stats.total}</span>
-                <span class="stat-label">Total Tugas</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-number">${stats.pending}</span>
-                <span class="stat-label">Belum Selesai</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-number">${stats.completed}</span>
-                <span class="stat-label">Selesai</span>
-            </div>
-            <div class="stat-item priority-high">
-                <span class="stat-number">${stats.byPriority.high}</span>
-                <span class="stat-label">Prioritas Tinggi</span>
-            </div>
-        </div>
-    `;
+function handleLogout() {
+  app.userController.logout();
+  app.currentUser = null;
+  showLoginSection();
+  app.taskView.showMessage("Berhasil logout", "info");
 }
 
 /**
- * Menampilkan Pesan Notifikasi (Pojok Kanan Atas)
+ * Handler event registrasi user.
+ * @param {Event} e - Event submit form.
  */
-function showMessage(message, type = 'info') {
-    const messageContainer = document.getElementById('messages');
-    if (!messageContainer) return;
-    
-    const messageElement = document.createElement('div');
-    messageElement.className = `message message-${type}`;
-    messageElement.textContent = message;
-    
-    messageContainer.appendChild(messageElement);
-    
-    // Hilang otomatis setelah 3 detik
-    setTimeout(() => {
-        if (messageElement.parentNode) {
-            messageElement.parentNode.removeChild(messageElement);
-        }
-    }, 3000);
+function handleRegister(e) {
+  e.preventDefault();
+  const form = e.target;
+  const userData = {
+    username: form.username.value,
+    email: form.email.value,
+    fullName: form.fullName.value,
+  };
+  const response = app.userController.register(userData);
+  if (response.success) {
+    app.taskView.showMessage(response.message, "success");
+    document.getElementById("registerModal").style.display = "none";
+    form.reset();
+    document.getElementById("usernameInput").value = userData.username;
+  } else {
+    alert(response.error);
+  }
 }
 
 /**
- * Mencegah kode berbahaya (XSS) saat menampilkan teks
+ * Handler event pembuatan task baru.
+ * @param {Event} e - Event submit form.
  */
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+function handleCreateTask(e) {
+  e.preventDefault();
+  const formData = new FormData(e.target);
+  const taskData = {
+    title: formData.get("title"),
+    description: formData.get("description"),
+    category: formData.get("category"),
+    priority: formData.get("priority"),
+    dueDate: formData.get("dueDate"),
+    estimatedHours: parseFloat(formData.get("estimatedHours")),
+    assigneeId: formData.get("assigneeId"),
+    tags: formData.get("tags")
+      ? formData
+          .get("tags")
+          .split(",")
+          .map((t) => t.trim())
+      : [],
+  };
+  const response = app.taskController.createTask(taskData);
+  if (response.success) {
+    app.taskView.showMessage(response.message, "success");
+    e.target.reset();
+    app.taskView.refresh();
+  } else {
+    app.taskView.showMessage(response.error, "error");
+  }
 }
 
-// Jalankan aplikasi saat halaman selesai dimuat
-document.addEventListener('DOMContentLoaded', initializeApp);
+// ==============================================================
+// Helper UI
+// ==============================================================
 
-// Ekspor fungsi agar bisa diakses global (oleh tombol di HTML)
-window.handleTaskToggle = handleTaskToggle;
-window.handleTaskDelete = handleTaskDelete;
+function showLoginSection() {
+  document.getElementById("loginSection").style.display = "flex";
+  document.getElementById("userInfo").style.display = "none";
+  document.getElementById("mainContent").style.display = "none";
+  document.getElementById("usernameInput").value = "";
+}
+
+function showMainContent() {
+  document.getElementById("loginSection").style.display = "none";
+  document.getElementById("userInfo").style.display = "flex";
+  document.getElementById("mainContent").style.display = "block";
+  document.getElementById(
+    "welcomeMessage"
+  ).textContent = `Halo, ${app.currentUser.username}`;
+}
+
+function loadAssignees() {
+  const res = app.userController.getAllUsers();
+  if (res.success) {
+    const select = document.getElementById("taskAssignee");
+    select.innerHTML = "";
+    const selfOpt = document.createElement("option");
+    selfOpt.value = app.currentUser.id;
+    selfOpt.textContent = "Diri Sendiri";
+    select.appendChild(selfOpt);
+    res.data.forEach((u) => {
+      if (u.id !== app.currentUser.id) {
+        const opt = document.createElement("option");
+        opt.value = u.id;
+        opt.textContent = u.fullName || u.username;
+        select.appendChild(opt);
+      }
+    });
+  }
+}
+
+function createDemoDataIfNeeded() {
+  if (app.userRepository.findAll().length === 0) {
+    app.userRepository.create({
+      username: "demo",
+      email: "demo@test.com",
+      fullName: "Demo User",
+    });
+    app.userRepository.create({
+      username: "budi",
+      email: "budi@test.com",
+      fullName: "Budi Santoso",
+    });
+  }
+}
+
+// Menjalankan inisialisasi saat DOM siap
+document.addEventListener("DOMContentLoaded", initializeApp);
