@@ -1,3 +1,9 @@
+if (typeof require !== "undefined" && typeof module !== "undefined") {
+  if (typeof EnhancedTask === "undefined") {
+    global.EnhancedTask = require("../models/EnhancedTask");
+  }
+}
+
 /**
  * Task Repository - Lapisan abstraksi data untuk entitas Task.
  * @class TaskRepository

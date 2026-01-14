@@ -1,3 +1,9 @@
+if (typeof require !== "undefined" && typeof module !== "undefined") {
+  if (typeof User === "undefined") {
+    global.User = require("../models/User");
+  }
+}
+
 /**
  * User Repository - Lapisan abstraksi data untuk entitas User.
  * @class UserRepository
