@@ -1,8 +1,3 @@
-/**
- * styles.css
- * Sistem Manajemen Tugas (Day 2)
- */
-
 /* --- RESET & BASE --- */
 * {
   margin: 0;
@@ -17,7 +12,6 @@ body {
   background-color: #f5f7fa;
 }
 
-/* Wrapper Utama */
 .app-container {
   max-width: 1200px;
   margin: 0 auto;
@@ -48,7 +42,6 @@ body {
   margin-bottom: 2rem;
 }
 
-/* User & Login Section */
 .user-section {
   max-width: 500px;
   margin: 0 auto;
@@ -108,7 +101,7 @@ section h2 {
   font-weight: 700;
 }
 
-/* --- DASHBOARD / STATS --- */
+/* --- STATS --- */
 .stats-container {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -143,65 +136,26 @@ section h2 {
   color: #e53e3e;
 }
 
-/* --- AKSI CEPAT (Quick Actions) --- */
-.quick-actions {
-  display: flex;
-  gap: 15px;
-  justify-content: center;
-  flex-wrap: wrap;
-  background: transparent; /* Override default section bg */
-  box-shadow: none;
-  border: none;
-  padding: 0;
-}
-
-/* --- FORM --- */
-.task-form {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.form-row {
+/* Category Stats */
+.category-stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-top: 15px;
 }
 
-.form-group {
-  display: flex;
-  flex-direction: column;
+.category-stat-item {
+  background: #fff;
+  padding: 12px;
+  border-radius: 8px;
+  border-left: 4px solid #667eea;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-.form-group label {
-  margin-bottom: 8px;
-  font-weight: 600;
-  color: #4a5568;
+.category-stat-item h4 {
+  margin: 0 0 5px 0;
   font-size: 0.9rem;
-}
-
-input,
-select,
-textarea {
-  padding: 10px 12px;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  font-size: 1rem;
-  transition: border-color 0.2s;
-  width: 100%;
-  background-color: #fff;
-}
-
-input:focus,
-select:focus,
-textarea:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-textarea {
-  resize: vertical;
+  color: #4a5568;
 }
 
 /* --- BUTTONS --- */
@@ -272,7 +226,11 @@ textarea {
   background: rgba(255, 255, 255, 0.1);
 }
 
-/* Tombol kecil di dalam list */
+.btn-sm {
+  padding: 5px 10px;
+  font-size: 0.8rem;
+}
+
 .btn-toggle,
 .btn-delete {
   padding: 8px;
@@ -292,18 +250,73 @@ textarea {
   color: #822727;
 }
 
-/* --- SEARCH & FILTER --- */
+/* --- FORM --- */
+.task-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #4a5568;
+  font-size: 0.9rem;
+}
+
+input,
+select,
+textarea {
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+  width: 100%;
+  background-color: #fff;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+textarea {
+  resize: vertical;
+}
+
+/* --- FILTERS --- */
 .search-container {
   margin-bottom: 20px;
 }
 
-.filter-buttons {
+.filter-group {
+  margin-bottom: 15px;
+}
+
+.filter-buttons,
+.category-buttons {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
 }
 
-.filter-btn {
+.filter-btn,
+.category-btn {
   background: white;
   border: 1px solid #e2e8f0;
   color: #718096;
@@ -314,10 +327,13 @@ textarea {
   transition: all 0.2s;
 }
 
-.filter-btn:hover {
+.filter-btn:hover,
+.category-btn:hover {
   border-color: #cbd5e0;
 }
-.filter-btn.active {
+
+.filter-btn.active,
+.category-btn.active {
   background: #5a67d8;
   color: white;
   border-color: #5a67d8;
@@ -347,7 +363,6 @@ textarea {
   box-shadow: 0 8px 15px rgba(0, 0, 0, 0.05);
 }
 
-/* Warna Border Prioritas */
 .task-item.priority-urgent {
   border-left-color: #e53e3e;
 }
@@ -364,7 +379,6 @@ textarea {
   border-left-color: #38a169;
 }
 
-/* Kondisi Task */
 .task-item.status-completed {
   opacity: 0.6;
   background-color: #f7fafc;
@@ -401,14 +415,18 @@ textarea {
   margin: 0;
 }
 
-/* Badges */
-.task-badges span {
+.task-badges {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.badge {
   font-size: 0.75rem;
   padding: 3px 8px;
   border-radius: 12px;
   font-weight: 600;
   text-transform: uppercase;
-  margin-left: 5px;
 }
 
 .badge-urgent {
@@ -432,29 +450,34 @@ textarea {
 }
 
 .badge-category {
-  background: #e2e8f0;
-  color: #2d3748;
-  border: 1px solid #cbd5e0;
+  border: 1px solid #e2e8f0;
+  margin-left: 5px;
+}
+
+.category-work {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+.category-personal {
+  background-color: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.category-study {
+  background-color: #e8f5e8;
+  color: #2e7d32;
+}
+
+.category-shopping {
+  background-color: #fce4ec;
+  color: #c2185b;
 }
 
 .task-description {
   color: #4a5568;
   margin-bottom: 10px;
   font-size: 0.95rem;
-}
-
-.task-tags {
-  display: flex;
-  gap: 5px;
-  margin-bottom: 10px;
-}
-
-.tag {
-  background: #edf2f7;
-  color: #718096;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 0.8rem;
 }
 
 .task-meta {
@@ -507,7 +530,74 @@ textarea {
   margin-top: 20px;
 }
 
-/* --- NOTIFIKASI --- */
+/* Large Modal for Tasks */
+.large-modal {
+  max-width: 600px;
+  width: 95%;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 15px;
+  margin-bottom: 15px;
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+/* Collaboration */
+.collaboration-section {
+  margin-top: 20px;
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.share-block,
+.comments-block {
+  margin-bottom: 20px;
+}
+
+.share-input-group,
+.comment-input-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.comments-list {
+  max-height: 200px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #e9ecef;
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+
+.comment-item {
+  border-bottom: 1px solid #eee;
+  padding: 8px 0;
+}
+
+.comment-item small {
+  color: #888;
+  margin-left: 10px;
+}
+
+.comment-item p {
+  margin: 5px 0 0;
+  font-size: 0.95rem;
+}
+
+/* --- MESSAGES --- */
 .messages-container {
   position: fixed;
   top: 20px;

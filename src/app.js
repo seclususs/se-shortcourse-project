@@ -1,3 +1,7 @@
+/**
+ * Objek global aplikasi.
+ * @type {Object}
+ */
 const app = {
   storage: null,
   userRepository: null,
@@ -10,6 +14,9 @@ const app = {
   currentUser: null,
 };
 
+/**
+ * Menginisialisasi aplikasi dan dependensinya.
+ */
 function initializeApp() {
   console.log("🚀 Memulai Aplikasi Manajemen Tugas...");
   try {
@@ -34,6 +41,9 @@ function initializeApp() {
   }
 }
 
+/**
+ * Mengatur event listener untuk autentikasi dan interaksi utama.
+ */
 function setupAuthEventListeners() {
   document.getElementById("loginBtn")?.addEventListener("click", handleLogin);
 
@@ -60,10 +70,32 @@ function setupAuthEventListeners() {
   document.querySelectorAll(".filter-btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       document
+        .querySelectorAll(".category-btn")
+        .forEach((b) => b.classList.remove("active"));
+      app.taskView.currentCategoryFilter = null;
+      document
         .querySelectorAll(".filter-btn")
         .forEach((b) => b.classList.remove("active"));
       e.target.classList.add("active");
       app.taskView.currentFilter = e.target.dataset.filter;
+      app.taskView.renderTasks();
+    });
+  });
+
+  document.querySelectorAll(".category-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      const category = e.target.dataset.category;
+
+      if (app.taskView.currentCategoryFilter === category) {
+        e.target.classList.remove("active");
+        app.taskView.currentCategoryFilter = null;
+      } else {
+        document
+          .querySelectorAll(".category-btn")
+          .forEach((b) => b.classList.remove("active"));
+        e.target.classList.add("active");
+        app.taskView.currentCategoryFilter = category;
+      }
       app.taskView.renderTasks();
     });
   });
@@ -137,6 +169,9 @@ function setupAuthEventListeners() {
   });
 }
 
+/**
+ * Menangani proses login.
+ */
 function handleLogin() {
   const username = document.getElementById("usernameInput").value;
   const response = app.userController.login(username);
@@ -151,6 +186,9 @@ function handleLogin() {
   }
 }
 
+/**
+ * Menangani proses logout.
+ */
 function handleLogout() {
   app.userController.logout();
   app.currentUser = null;
@@ -158,6 +196,10 @@ function handleLogout() {
   app.taskView.showMessage("Berhasil logout", "info");
 }
 
+/**
+ * Menangani proses registrasi.
+ * @param {Event} e - Event submit form.
+ */
 function handleRegister(e) {
   e.preventDefault();
   const form = e.target;
@@ -177,6 +219,10 @@ function handleRegister(e) {
   }
 }
 
+/**
+ * Menangani pembuatan tugas baru.
+ * @param {Event} e - Event submit form.
+ */
 function handleCreateTask(e) {
   e.preventDefault();
   const formData = new FormData(e.target);
@@ -205,6 +251,9 @@ function handleCreateTask(e) {
   }
 }
 
+/**
+ * Menampilkan bagian login.
+ */
 function showLoginSection() {
   document.getElementById("loginSection").style.display = "flex";
   document.getElementById("userInfo").style.display = "none";
@@ -212,6 +261,9 @@ function showLoginSection() {
   document.getElementById("usernameInput").value = "";
 }
 
+/**
+ * Menampilkan konten utama setelah login.
+ */
 function showMainContent() {
   document.getElementById("loginSection").style.display = "none";
   document.getElementById("userInfo").style.display = "flex";
@@ -221,6 +273,9 @@ function showMainContent() {
   ).textContent = `Halo, ${app.currentUser.username}`;
 }
 
+/**
+ * Memuat daftar user untuk dropdown assignee.
+ */
 function loadAssignees() {
   const res = app.userController.getAllUsers();
   if (res.success) {
@@ -241,6 +296,9 @@ function loadAssignees() {
   }
 }
 
+/**
+ * Membuat data demo jika belum ada user.
+ */
 function createDemoDataIfNeeded() {
   if (app.userRepository.findAll().length === 0) {
     app.userRepository.create({

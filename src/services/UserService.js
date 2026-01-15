@@ -1,8 +1,19 @@
 class UserService {
+  /**
+   * Membuat instance UserService.
+   * @constructor
+   * @param {UserRepository} userRepository - Repository pengguna.
+   */
   constructor(userRepository) {
     this.userRepository = userRepository;
   }
 
+  /**
+   * Mendaftarkan pengguna baru.
+   * @param {Object} userData - Data pengguna.
+   * @returns {User} Pengguna yang berhasil didaftarkan.
+   * @throws {Error} Jika validasi gagal.
+   */
   register(userData) {
     if (!userData.username || userData.username.trim() === "") {
       throw new Error("Username wajib diisi");
@@ -13,6 +24,12 @@ class UserService {
     return this.userRepository.create(userData);
   }
 
+  /**
+   * Melakukan login pengguna.
+   * @param {string} username - Username pengguna.
+   * @returns {User} Pengguna yang berhasil login.
+   * @throws {Error} Jika pengguna tidak ditemukan atau tidak aktif.
+   */
   login(username) {
     if (!username || username.trim() === "") {
       throw new Error("Username wajib diisi");
@@ -28,10 +45,20 @@ class UserService {
     return user;
   }
 
+  /**
+   * Mendapatkan semua pengguna aktif.
+   * @returns {User[]} Daftar pengguna aktif.
+   */
   getAllUsers() {
     return this.userRepository.findActive();
   }
 
+  /**
+   * Mendapatkan pengguna berdasarkan ID.
+   * @param {string} userId - ID pengguna.
+   * @returns {User} Instance pengguna.
+   * @throws {Error} Jika pengguna tidak ditemukan.
+   */
   getUserById(userId) {
     const user = this.userRepository.findById(userId);
     if (!user) throw new Error("User tidak ditemukan");

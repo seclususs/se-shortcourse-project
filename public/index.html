@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sistem Manajemen Tugas - Day 3</title>
+    <title>Sistem Manajemen Tugas</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -12,7 +12,7 @@
       <header class="app-header">
         <div class="header-content">
           <h1>Task Manager</h1>
-          <p class="subtitle">Day 3: Testing & Quality Assurance</p>
+          <p class="subtitle">Completed</p>
 
           <div class="user-section">
             <!-- Login Form -->
@@ -41,11 +41,19 @@
 
       <!-- Main Content (Hidden until login) -->
       <main class="main-content" id="mainContent" style="display: none">
-        <!-- Statistik -->
+        <!-- Statistik Dashboard -->
         <section class="stats-section">
           <h2>Dashboard</h2>
           <div id="taskStats" class="stats-container">
-            <!-- Statistik akan muncul di sini -->
+            <!-- Statistik Utama -->
+          </div>
+          <!-- Statistik Kategori -->
+          <div
+            id="categoryStatsContainer"
+            class="category-stats-container"
+            style="display: none; margin-top: 20px"
+          >
+            <!-- Kategori stats render disini -->
           </div>
         </section>
 
@@ -76,15 +84,17 @@
                   placeholder="Apa yang perlu dikerjakan?"
                 />
               </div>
+              <!-- Selector Kategori -->
               <div class="form-group">
                 <label>Kategori</label>
-                <select name="category">
-                  <option value="personal">Pribadi</option>
-                  <option value="work">Kerja</option>
-                  <option value="study">Belajar</option>
-                  <option value="health">Kesehatan</option>
-                  <option value="finance">Keuangan</option>
-                  <option value="other">Lainnya</option>
+                <select name="category" id="taskCategorySelect">
+                  <option value="personal">Pribadi (Personal)</option>
+                  <option value="work">Kerja (Work)</option>
+                  <option value="study">Belajar (Study)</option>
+                  <option value="health">Kesehatan (Health)</option>
+                  <option value="finance">Keuangan (Finance)</option>
+                  <option value="shopping">Belanja (Shopping)</option>
+                  <option value="other">Lainnya (Other)</option>
                 </select>
               </div>
             </div>
@@ -152,14 +162,41 @@
             />
           </div>
 
-          <div class="filter-buttons">
-            <button class="filter-btn active" data-filter="all">Semua</button>
-            <button class="filter-btn" data-filter="pending">
-              Belum Selesai
-            </button>
-            <button class="filter-btn" data-filter="completed">Selesai</button>
-            <button class="filter-btn" data-filter="work">Kerja</button>
-            <button class="filter-btn" data-filter="study">Belajar</button>
+          <div class="filter-wrapper">
+            <div class="filter-group">
+              <h3>Status</h3>
+              <div class="filter-buttons">
+                <button class="filter-btn active" data-filter="all">
+                  Semua
+                </button>
+                <button class="filter-btn" data-filter="pending">
+                  Belum Selesai
+                </button>
+                <button class="filter-btn" data-filter="completed">
+                  Selesai
+                </button>
+              </div>
+            </div>
+
+            <!-- Filter Kategori Baru -->
+            <div class="filter-group category-filters">
+              <h3>Kategori</h3>
+              <div class="category-buttons">
+                <button class="category-btn" data-category="work">Work</button>
+                <button class="category-btn" data-category="personal">
+                  Personal
+                </button>
+                <button class="category-btn" data-category="study">
+                  Study
+                </button>
+                <button class="category-btn" data-category="health">
+                  Health
+                </button>
+                <button class="category-btn" data-category="shopping">
+                  Shopping
+                </button>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -201,9 +238,70 @@
           </form>
         </div>
       </div>
+
+      <!-- Detail Tugas & Kolaborasi -->
+      <div id="taskDetailModal" class="modal" style="display: none">
+        <div class="modal-content large-modal">
+          <div class="modal-header">
+            <h3 id="modalTaskTitle">Task Title</h3>
+            <button class="btn-close" id="closeDetailModal">&times;</button>
+          </div>
+          <div class="modal-body">
+            <!-- Info Utama -->
+            <div class="task-info-block">
+              <p id="modalTaskDesc" class="task-desc-large">Description</p>
+              <div class="meta-row">
+                <span id="modalTaskStatus" class="badge">Status</span>
+                <span id="modalTaskPriority" class="badge">Priority</span>
+                <span id="modalTaskCategory" class="badge">Category</span>
+              </div>
+            </div>
+
+            <hr class="modal-divider" />
+
+            <!-- Area Kolaborasi -->
+            <div class="collaboration-section">
+              <!-- Share -->
+              <div class="share-block">
+                <h4><span class="icon">👥</span> Bagikan Tugas</h4>
+                <div class="share-input-group">
+                  <input
+                    type="text"
+                    id="shareUsernameInput"
+                    placeholder="Masukkan username teman..."
+                  />
+                  <button id="shareTaskBtn" class="btn btn-info btn-sm">
+                    Share
+                  </button>
+                </div>
+                <small class="text-muted"
+                  >Akses saat ini: <span id="sharedUserList">-</span></small
+                >
+              </div>
+
+              <!-- Komentar -->
+              <div class="comments-block">
+                <h4><span class="icon">💬</span> Diskusi</h4>
+                <div id="commentsList" class="comments-list">
+                  <!-- Komentar akan muncul di sini -->
+                </div>
+                <div class="comment-input-group">
+                  <textarea
+                    id="newCommentInput"
+                    placeholder="Tulis komentar..."
+                  ></textarea>
+                  <button id="addCommentBtn" class="btn btn-primary btn-sm">
+                    Kirim
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Script Loading: Urutan sangat penting! -->
+    <!-- Script Loading -->
     <script src="src/utils/StorageManager.js"></script>
     <script src="src/models/User.js"></script>
     <script src="src/models/Task.js"></script>

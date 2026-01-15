@@ -5,6 +5,11 @@ if (typeof require !== "undefined" && typeof module !== "undefined") {
 }
 
 class UserRepository {
+  /**
+   * Membuat instance UserRepository.
+   * @constructor
+   * @param {StorageManager} storageManager - Instance StorageManager.
+   */
   constructor(storageManager) {
     this.storage = storageManager;
     this.users = new Map();
@@ -12,6 +17,12 @@ class UserRepository {
     this._loadUsersFromStorage();
   }
 
+  /**
+   * Membuat user baru.
+   * @param {Object} userData - Data user.
+   * @returns {User} User yang baru dibuat.
+   * @throws {Error} Jika username atau email sudah ada.
+   */
   create(userData) {
     try {
       if (this.findByUsername(userData.username)) {
@@ -34,10 +45,20 @@ class UserRepository {
     }
   }
 
+  /**
+   * Mencari user berdasarkan ID.
+   * @param {string} id - ID user.
+   * @returns {User|null} User atau null.
+   */
   findById(id) {
     return this.users.get(id) || null;
   }
 
+  /**
+   * Mencari user berdasarkan username.
+   * @param {string} username - Username.
+   * @returns {User|null} User atau null.
+   */
   findByUsername(username) {
     const normalizedUsername = username.toLowerCase();
     for (const user of this.users.values()) {
@@ -48,6 +69,11 @@ class UserRepository {
     return null;
   }
 
+  /**
+   * Mencari user berdasarkan email.
+   * @param {string} email - Email.
+   * @returns {User|null} User atau null.
+   */
   findByEmail(email) {
     const normalizedEmail = email.toLowerCase();
     for (const user of this.users.values()) {
@@ -58,14 +84,27 @@ class UserRepository {
     return null;
   }
 
+  /**
+   * Mendapatkan semua user.
+   * @returns {User[]} Array user.
+   */
   findAll() {
     return Array.from(this.users.values());
   }
 
+  /**
+   * Mendapatkan semua user yang aktif.
+   * @returns {User[]} Array user aktif.
+   */
   findActive() {
     return this.findAll().filter((user) => user.isActive);
   }
 
+  /**
+   * Mencatat login user.
+   * @param {string} id - ID user.
+   * @returns {User|null} User yang login atau null.
+   */
   recordLogin(id) {
     const user = this.findById(id);
     if (user) {
@@ -75,6 +114,10 @@ class UserRepository {
     return user;
   }
 
+  /**
+   * Memuat user dari storage ke memory.
+   * @private
+   */
   _loadUsersFromStorage() {
     try {
       const usersData = this.storage.load(this.storageKey, []);
@@ -91,6 +134,10 @@ class UserRepository {
     }
   }
 
+  /**
+   * Menyimpan semua user dari memory ke storage.
+   * @private
+   */
   _saveUsersToStorage() {
     try {
       const usersData = Array.from(this.users.values()).map((user) =>

@@ -5,6 +5,11 @@ if (typeof require !== "undefined" && typeof module !== "undefined") {
 }
 
 class TaskRepository {
+  /**
+   * Membuat instance TaskRepository.
+   * @constructor
+   * @param {StorageManager} storageManager - Instance StorageManager.
+   */
   constructor(storageManager) {
     this.storage = storageManager;
     this.tasks = new Map();
@@ -12,6 +17,11 @@ class TaskRepository {
     this._loadTasksFromStorage();
   }
 
+  /**
+   * Membuat task baru.
+   * @param {Object} taskData - Data tugas.
+   * @returns {Task} Tugas yang baru dibuat.
+   */
   create(taskData) {
     try {
       const task = new Task(
@@ -29,14 +39,38 @@ class TaskRepository {
     }
   }
 
+  /**
+   * Mencari task berdasarkan ID.
+   * @param {string} id - ID tugas.
+   * @returns {Task|null} Tugas atau null.
+   */
   findById(id) {
     return this.tasks.get(id) || null;
   }
 
+  /**
+   * Mencari semua task berdasarkan owner ID.
+   * @param {string} ownerId - ID pemilik.
+   * @returns {Task[]} Array tugas.
+   */
+  findByOwner(ownerId) {
+    return this.findAll().filter((task) => task.ownerId === ownerId);
+  }
+
+  /**
+   * Mendapatkan semua task.
+   * @returns {Task[]} Array tugas.
+   */
   findAll() {
     return Array.from(this.tasks.values());
   }
 
+  /**
+   * Memperbarui task yang ada.
+   * @param {string} id - ID tugas.
+   * @param {Object} updates - Data perubahan.
+   * @returns {Task|null} Tugas yang diperbarui atau null.
+   */
   update(id, updates) {
     const task = this.findById(id);
     if (!task) return null;
@@ -51,6 +85,12 @@ class TaskRepository {
       if (updates.assigneeId !== undefined) task.assignTo(updates.assigneeId);
       if (updates.estimatedHours !== undefined)
         task.setEstimatedHours(updates.estimatedHours);
+      if (updates.tags !== undefined) {
+        task.clearTags();
+        if (Array.isArray(updates.tags)) {
+          updates.tags.forEach((t) => task.addTag(t));
+        }
+      }
       this._saveTasksToStorage();
       return task;
     } catch (error) {
@@ -59,6 +99,11 @@ class TaskRepository {
     }
   }
 
+  /**
+   * Menghapus task berdasarkan ID.
+   * @param {string} id - ID tugas.
+   * @returns {boolean} True jika berhasil dihapus.
+   */
   delete(id) {
     if (this.tasks.has(id)) {
       this.tasks.delete(id);
@@ -68,6 +113,69 @@ class TaskRepository {
     return false;
   }
 
+  /**
+   * Mencari task berdasarkan kategori.
+   * @param {string} category - Nama kategori.
+   * @returns {Task[]} Array tugas.
+   */
+  findByCategory(category) {
+    return this.findAll().filter((task) => task.category === category);
+  }
+
+  /**
+   * Mendapatkan statistik tugas berdasarkan kategori.
+   * @param {string} [userId=null] - ID user untuk filter (opsional).
+   * @returns {Object} Statistik kategori.
+   */
+  getCategoryStats(userId = null) {
+    let tasks = userId ? this.findByOwner(userId) : this.findAll();
+    const stats = {};
+    const categories = Task.getAvailableCategories();
+    categories.forEach((category) => {
+      stats[category] = { total: 0, completed: 0, pending: 0, overdue: 0 };
+    });
+    tasks.forEach((task) => {
+      const category = task.category;
+      if (stats[category]) {
+        stats[category].total++;
+        if (task.isCompleted) {
+          stats[category].completed++;
+        } else {
+          stats[category].pending++;
+        }
+        if (task.isOverdue) {
+          stats[category].overdue++;
+        }
+      }
+    });
+    return stats;
+  }
+
+  /**
+   * Mendapatkan kategori yang paling sering digunakan.
+   * @param {string} [userId=null] - ID user (opsional).
+   * @param {number} [limit=5] - Batas jumlah kategori.
+   * @returns {Object[]} Array kategori terpopuler.
+   */
+  getMostUsedCategories(userId = null, limit = 5) {
+    const stats = this.getCategoryStats(userId);
+    return Object.entries(stats)
+      .sort(([, a], [, b]) => b.total - a.total)
+      .slice(0, limit)
+      .map(([category, data]) => ({
+        category,
+        count: data.total,
+        displayName: new Task("t", "t", "t", {
+          category,
+        }).getCategoryDisplayName(),
+      }));
+  }
+
+  /**
+   * Memfilter task berdasarkan berbagai kriteria.
+   * @param {Object} filters - Kriteria filter.
+   * @returns {Task[]} Array tugas hasil filter.
+   */
   filter(filters) {
     let results = this.findAll();
     if (filters.ownerId)
@@ -88,6 +196,13 @@ class TaskRepository {
     return results;
   }
 
+  /**
+   * Mengurutkan daftar task.
+   * @param {Task[]} tasks - Array tugas.
+   * @param {string} [sortBy="createdAt"] - Field pengurutan.
+   * @param {string} [order="desc"] - Arah pengurutan (asc/desc).
+   * @returns {Task[]} Array tugas terurut.
+   */
   sort(tasks, sortBy = "createdAt", order = "desc") {
     return tasks.sort((a, b) => {
       let valueA, valueB;
@@ -103,12 +218,20 @@ class TaskRepository {
           break;
         }
         case "dueDate":
-          valueA = a.dueDate || new Date("9999-12-31");
-          valueB = b.dueDate || new Date("9999-12-31");
+          valueA = a.dueDate
+            ? a.dueDate.getTime()
+            : order === "asc"
+            ? Number.MAX_SAFE_INTEGER
+            : 0;
+          valueB = b.dueDate
+            ? b.dueDate.getTime()
+            : order === "asc"
+            ? Number.MAX_SAFE_INTEGER
+            : 0;
           break;
         default:
-          valueA = a.createdAt;
-          valueB = b.createdAt;
+          valueA = a.createdAt.getTime();
+          valueB = b.createdAt.getTime();
       }
       if (order === "asc")
         return valueA > valueB ? 1 : valueA < valueB ? -1 : 0;
@@ -116,6 +239,11 @@ class TaskRepository {
     });
   }
 
+  /**
+   * Mencari task berdasarkan query string.
+   * @param {string} query - Kata kunci pencarian.
+   * @returns {Task[]} Array tugas yang cocok.
+   */
   search(query) {
     const searchTerm = query.toLowerCase();
     return this.findAll().filter(
@@ -126,6 +254,11 @@ class TaskRepository {
     );
   }
 
+  /**
+   * Mendapatkan statistik umum tugas.
+   * @param {string} [userId=null] - ID user (opsional).
+   * @returns {Object} Objek statistik.
+   */
   getStats(userId = null) {
     let tasks = userId ? this.filter({ ownerId: userId }) : this.findAll();
     const stats = {
@@ -147,6 +280,10 @@ class TaskRepository {
     return stats;
   }
 
+  /**
+   * Memuat task dari storage ke memory.
+   * @private
+   */
   _loadTasksFromStorage() {
     try {
       const tasksData = this.storage.load(this.storageKey, []);
@@ -163,6 +300,10 @@ class TaskRepository {
     }
   }
 
+  /**
+   * Menyimpan task dari memory ke storage.
+   * @private
+   */
   _saveTasksToStorage() {
     try {
       const tasksData = Array.from(this.tasks.values()).map((task) =>

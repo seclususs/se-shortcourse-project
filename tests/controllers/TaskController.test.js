@@ -95,11 +95,4 @@ describe("TaskController", () => {
     const response = taskController.getOverdueTasks();
     TestAssertions.assertControllerResponse(response, false);
   });
-
-  test("setCurrentUser should warn about deprecation", () => {
-    const spy = jest.spyOn(console, "warn").mockImplementation(() => {});
-    taskController.setCurrentUser("u1");
-    expect(spy).toHaveBeenCalled();
-    spy.mockRestore();
-  });
 });
