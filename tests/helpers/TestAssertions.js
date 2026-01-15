@@ -1,10 +1,4 @@
-/**
- * Test Assertions - Helper untuk assertions yang sering dipakai
- */
 class TestAssertions {
-  /**
-   * Assert bahwa task memiliki properties yang diperlukan
-   */
   static assertTaskHasRequiredProperties(task) {
     expect(task).toHaveProperty("id");
     expect(task).toHaveProperty("title");
@@ -15,9 +9,6 @@ class TestAssertions {
     expect(task).toHaveProperty("category");
   }
 
-  /**
-   * Assert bahwa user memiliki properties yang diperlukan
-   */
   static assertUserHasRequiredProperties(user) {
     expect(user).toHaveProperty("id");
     expect(user).toHaveProperty("username");
@@ -26,15 +17,10 @@ class TestAssertions {
     expect(user).toHaveProperty("createdAt");
   }
 
-  /**
-   * Assert response format dari controller
-   */
   static assertControllerResponse(response, shouldSucceed = true) {
     expect(response).toHaveProperty("success");
     expect(response.success).toBe(shouldSucceed);
-
     if (shouldSucceed) {
-      // Success response bisa punya 'data' atau 'message'
       const hasData = Object.prototype.hasOwnProperty.call(response, "data");
       const hasMessage = Object.prototype.hasOwnProperty.call(
         response,
@@ -47,9 +33,6 @@ class TestAssertions {
     }
   }
 
-  /**
-   * Assert validation result
-   */
   static assertValidationResult(result, shouldBeValid, expectedErrors = []) {
     expect(result.isValid).toBe(shouldBeValid);
     if (!shouldBeValid) {

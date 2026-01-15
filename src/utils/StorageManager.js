@@ -1,26 +1,13 @@
-/**
- * Enhanced Storage Manager - Mengelola penyimpanan lokal dengan fitur lanjutan.
- * @class EnhancedStorageManager
- * @description Menyediakan antarmuka untuk menyimpan, memuat, dan mengelola data aplikasi di localStorage dengan dukungan multi-entitas.
- */
-class EnhancedStorageManager {
-  /**
-   * @param {string} appName - Namespace aplikasi (default: 'taskManagementApp').
-   * @param {string} version - Versi data (default: '2.0').
-   */
+class StorageManager {
   constructor(appName = "taskManagementApp", version = "2.0") {
     this.appName = appName;
     this.version = version;
     this.isAvailable = this._checkStorageAvailability();
-    this._initializeApp();
+    if (this.isAvailable) {
+      this._initializeApp();
+    }
   }
 
-  /**
-   * Menyimpan data untuk entitas tertentu.
-   * @param {string} entity - Nama entitas (misal: 'users', 'tasks').
-   * @param {any} data - Data yang akan disimpan (akan diserialisasi ke JSON).
-   * @returns {boolean} True jika penyimpanan berhasil, False jika gagal.
-   */
   save(entity, data) {
     if (!this.isAvailable) {
       console.warn("localStorage tidak tersedia.");
@@ -34,7 +21,9 @@ class EnhancedStorageManager {
         version: this.version,
       };
       localStorage.setItem(key, JSON.stringify(dataToSave));
-      this._updateMetadata(entity, dataToSave.timestamp);
+      if (entity !== "_metadata") {
+        this._updateMetadata(entity, dataToSave.timestamp);
+      }
       return true;
     } catch (error) {
       console.error(`Gagal menyimpan ${entity}:`, error);
@@ -42,12 +31,6 @@ class EnhancedStorageManager {
     }
   }
 
-  /**
-   * Memuat data untuk entitas tertentu.
-   * @param {string} entity - Nama entitas yang akan dimuat.
-   * @param {any} defaultValue - Nilai yang dikembalikan jika data tidak ditemukan (default: null).
-   * @returns {any} Data yang tersimpan atau defaultValue.
-   */
   load(entity, defaultValue = null) {
     if (!this.isAvailable) return defaultValue;
     try {
@@ -62,11 +45,6 @@ class EnhancedStorageManager {
     }
   }
 
-  /**
-   * Menghapus data entitas tertentu dari penyimpanan.
-   * @param {string} entity - Nama entitas yang akan dihapus.
-   * @returns {boolean} True jika berhasil dihapus.
-   */
   remove(entity) {
     if (!this.isAvailable) return false;
     try {
@@ -80,10 +58,6 @@ class EnhancedStorageManager {
     }
   }
 
-  /**
-   * Mengekspor semua data aplikasi untuk keperluan backup.
-   * @returns {Object|null} Objek berisi seluruh data aplikasi atau null jika gagal.
-   */
   exportData() {
     if (!this.isAvailable) return null;
     try {
@@ -107,10 +81,6 @@ class EnhancedStorageManager {
     }
   }
 
-  // ==============================================================
-  // Private Helpers
-  // ==============================================================
-
   _getKey(entity) {
     return `${this.appName}_${entity}`;
   }
@@ -127,12 +97,17 @@ class EnhancedStorageManager {
   }
 
   _initializeApp() {
-    if (!this.load("_metadata")) {
-      this.save("_metadata", {
-        version: this.version,
-        createdAt: new Date().toISOString(),
-        entities: {},
-      });
+    try {
+      const metaKey = this._getKey("_metadata");
+      if (!localStorage.getItem(metaKey)) {
+        this.save("_metadata", {
+          version: this.version,
+          createdAt: new Date().toISOString(),
+          entities: {},
+        });
+      }
+    } catch (error) {
+      console.warn("Gagal inisialisasi storage app:", error);
     }
   }
 
@@ -156,7 +131,7 @@ class EnhancedStorageManager {
 }
 
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = EnhancedStorageManager;
+  module.exports = StorageManager;
 } else {
-  window.EnhancedStorageManager = EnhancedStorageManager;
+  window.StorageManager = StorageManager;
 }

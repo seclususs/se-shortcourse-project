@@ -18,8 +18,7 @@ module.exports = {
         
         // Day 2 Globals
         User: 'readonly',
-        EnhancedTask: 'readonly',
-        EnhancedStorageManager: 'readonly',
+        UserService: 'readonly',
         UserRepository: 'readonly',
         TaskRepository: 'readonly',
         UserController: 'readonly',

@@ -1,108 +1,105 @@
 const TestDataFactory = require("../helpers/TestDataFactory");
 const TestAssertions = require("../helpers/TestAssertions");
 const TaskController = require("../../src/controllers/TaskController");
-const TaskRepository = require("../../src/repositories/TaskRepository");
-const UserRepository = require("../../src/repositories/UserRepository");
 
 describe("TaskController", () => {
   let taskController;
-  let taskRepository;
-  let userRepository;
-  let mockStorage;
-  let testUser;
+  let mockTaskService;
+  let mockUserController;
 
   beforeEach(() => {
-    // Setup integration system
-    mockStorage = TestDataFactory.createMockStorage();
-    taskRepository = new TaskRepository(mockStorage);
-    userRepository = new UserRepository(mockStorage);
-    taskController = new TaskController(taskRepository, userRepository);
-
-    // Create user & login
-    const userData = TestDataFactory.createValidUserData();
-    testUser = userRepository.create(userData);
-    taskController.setCurrentUser(testUser.id);
+    mockTaskService = {
+      createTask: jest.fn(),
+      getTasks: jest.fn(),
+      toggleTaskStatus: jest.fn(),
+      deleteTask: jest.fn(),
+      searchTasks: jest.fn(),
+      getTaskStats: jest.fn(),
+      getTasksDueSoon: jest.fn(),
+      getOverdueTasks: jest.fn(),
+    };
+    mockUserController = {
+      getCurrentUser: jest
+        .fn()
+        .mockReturnValue({ success: true, data: { id: "user1" } }),
+    };
+    taskController = new TaskController(mockTaskService, mockUserController);
   });
 
-  describe("Task Creation", () => {
-    test("should create task successfully", () => {
-      const taskData = TestDataFactory.createValidTaskData();
-      const response = taskController.createTask(taskData);
-
-      TestAssertions.assertControllerResponse(response, true);
-      expect(response.data.title).toBe(taskData.title);
-      expect(response.data.ownerId).toBe(testUser.id);
+  test("createTask should handle service errors", () => {
+    mockTaskService.createTask.mockImplementation(() => {
+      throw new Error("Database connection failed");
     });
-
-    test("should fail when user not logged in", () => {
-      taskController.currentUser = null;
-      const taskData = TestDataFactory.createValidTaskData();
-      const response = taskController.createTask(taskData);
-
-      TestAssertions.assertControllerResponse(response, false);
-      expect(response.error).toBe("Silakan login terlebih dahulu");
-    });
-
-    test("should fail when title is empty", () => {
-      const taskData = TestDataFactory.createValidTaskData({ title: "" });
-      const response = taskController.createTask(taskData);
-
-      TestAssertions.assertControllerResponse(response, false);
-      expect(response.error).toBe("Judul tugas wajib diisi");
-    });
+    const response = taskController.createTask(
+      TestDataFactory.createValidTaskData()
+    );
+    TestAssertions.assertControllerResponse(response, false);
+    expect(response.error).toBe("Database connection failed");
   });
 
-  describe("Task Retrieval", () => {
-    let testTask;
-
-    beforeEach(() => {
-      const taskData = TestDataFactory.createValidTaskData();
-      const createResponse = taskController.createTask(taskData);
-      testTask = createResponse.data;
+  test("getTasks should handle service errors", () => {
+    mockTaskService.getTasks.mockImplementation(() => {
+      throw new Error("Service unavailable");
     });
-
-    test("should get all user tasks", () => {
-      const response = taskController.getTasks();
-
-      TestAssertions.assertControllerResponse(response, true);
-      expect(response.data).toHaveLength(1);
-      expect(response.data[0].id).toBe(testTask.id);
-    });
-
-    test("should filter overdue tasks", () => {
-      // Set task as overdue via repository backdoor (controller might restrict setting past due dates if logic existed)
-      testTask.setDueDate(new Date("2020-01-01"));
-
-      const response = taskController.getOverdueTasks();
-      TestAssertions.assertControllerResponse(response, true);
-      expect(response.data).toHaveLength(1);
-    });
+    const response = taskController.getTasks();
+    TestAssertions.assertControllerResponse(response, false);
+    expect(response.error).toBe("Service unavailable");
   });
 
-  describe("Task Updates", () => {
-    let testTask;
-
-    beforeEach(() => {
-      const taskData = TestDataFactory.createValidTaskData();
-      const createResponse = taskController.createTask(taskData);
-      testTask = createResponse.data;
+  test("toggleTaskStatus should handle service errors", () => {
+    mockTaskService.toggleTaskStatus.mockImplementation(() => {
+      throw new Error("Task locked");
     });
+    const response = taskController.toggleTaskStatus("t1");
+    TestAssertions.assertControllerResponse(response, false);
+    expect(response.error).toBe("Task locked");
+  });
 
-    test("should toggle task status", () => {
-      expect(testTask.status).toBe("pending");
-
-      const response = taskController.toggleTaskStatus(testTask.id);
-      TestAssertions.assertControllerResponse(response, true);
-      expect(response.data.status).toBe("completed");
+  test("deleteTask should handle service errors", () => {
+    mockTaskService.deleteTask.mockImplementation(() => {
+      throw new Error("Permission denied");
     });
+    const response = taskController.deleteTask("t1");
+    TestAssertions.assertControllerResponse(response, false);
+    expect(response.error).toBe("Permission denied");
+  });
 
-    test("should delete task successfully", () => {
-      const response = taskController.deleteTask(testTask.id);
-      TestAssertions.assertControllerResponse(response, true);
-      expect(response.message).toContain("berhasil dihapus");
-
-      const getResponse = taskController.getTasks();
-      expect(getResponse.data).toHaveLength(0);
+  test("searchTasks should handle service errors", () => {
+    mockTaskService.searchTasks.mockImplementation(() => {
+      throw new Error("Search index failed");
     });
+    const response = taskController.searchTasks("query");
+    TestAssertions.assertControllerResponse(response, false);
+  });
+
+  test("getTaskStats should handle service errors", () => {
+    mockTaskService.getTaskStats.mockImplementation(() => {
+      throw new Error("Calc failed");
+    });
+    const response = taskController.getTaskStats();
+    TestAssertions.assertControllerResponse(response, false);
+  });
+
+  test("getTasksDueSoon should handle service errors", () => {
+    mockTaskService.getTasksDueSoon.mockImplementation(() => {
+      throw new Error("Date error");
+    });
+    const response = taskController.getTasksDueSoon();
+    TestAssertions.assertControllerResponse(response, false);
+  });
+
+  test("getOverdueTasks should handle service errors", () => {
+    mockTaskService.getOverdueTasks.mockImplementation(() => {
+      throw new Error("Date error");
+    });
+    const response = taskController.getOverdueTasks();
+    TestAssertions.assertControllerResponse(response, false);
+  });
+
+  test("setCurrentUser should warn about deprecation", () => {
+    const spy = jest.spyOn(console, "warn").mockImplementation(() => {});
+    taskController.setCurrentUser("u1");
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
   });
 });

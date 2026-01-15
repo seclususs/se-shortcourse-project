@@ -1,33 +1,16 @@
-/**
- * Task View - Mengelola representasi visual dan interaksi pengguna.
- * @class TaskView
- * @description Bertanggung jawab atas manipulasi DOM, rendering data tugas, dan menangani event antarmuka pengguna.
- */
 class TaskView {
-  /**
-   * @param {TaskController} taskController - Pengendali tugas.
-   * @param {UserController} userController - Pengendali pengguna.
-   */
   constructor(taskController, userController) {
     this.taskController = taskController;
     this.userController = userController;
-
-    // Referensi Elemen DOM
     this.taskForm = document.getElementById("taskForm");
     this.taskList = document.getElementById("taskList");
     this.taskStats = document.getElementById("taskStats");
     this.messagesContainer = document.getElementById("messages");
-
-    // State Internal Tampilan
     this.currentFilter = "all";
     this.currentSort = "createdAt";
     this.currentSortOrder = "desc";
   }
 
-  /**
-   * Merender daftar tugas ke elemen DOM.
-   * Mengambil data dari controller berdasarkan filter saat ini.
-   */
   renderTasks() {
     if (!this.taskList) return;
     const response = this.taskController.getTasks({
@@ -49,9 +32,6 @@ class TaskView {
     this._setupTaskEventListeners();
   }
 
-  /**
-   * Merender widget statistik tugas (Total, Pending, Selesai, Terlambat).
-   */
   renderStats() {
     if (!this.taskStats) return;
     const response = this.taskController.getTaskStats();
@@ -81,11 +61,6 @@ class TaskView {
         `;
   }
 
-  /**
-   * Menampilkan pesan notifikasi sementara kepada pengguna.
-   * @param {string} message - Isi pesan.
-   * @param {string} type - Jenis pesan ('success', 'error', 'info', 'warning').
-   */
   showMessage(message, type = "info") {
     if (!this.messagesContainer) return;
     const msgEl = document.createElement("div");
@@ -97,28 +72,16 @@ class TaskView {
     }, 5000);
   }
 
-  /**
-   * Memperbarui seluruh tampilan (Daftar Tugas dan Statistik).
-   */
   refresh() {
     this.renderTasks();
     this.renderStats();
   }
 
-  // ==============================================================
-  // Private Methods & Helpers
-  // ==============================================================
-
-  /**
-   * Mengatur event listener untuk item tugas (Toggle Status, Hapus).
-   * @private
-   */
   _setupTaskEventListeners() {
     document.querySelectorAll(".btn-toggle").forEach((btn) => {
       btn.addEventListener("click", (e) => {
         const taskId = e.target.closest(".task-item").dataset.taskId;
         const response = this.taskController.toggleTaskStatus(taskId);
-
         if (response.success) {
           this.showMessage(response.message, "success");
           this.refresh();
@@ -143,12 +106,6 @@ class TaskView {
     });
   }
 
-  /**
-   * Menghasilkan string HTML untuk satu item tugas.
-   * @private
-   * @param {EnhancedTask} task - Objek tugas.
-   * @returns {string} String HTML.
-   */
   _createTaskHTML(task) {
     const priorityClass = `priority-${task.priority}`;
     const statusClass = `status-${task.status}`;
@@ -213,11 +170,6 @@ class TaskView {
         `;
   }
 
-  /**
-   * Menghasilkan HTML untuk kondisi kosong.
-   * @private
-   * @returns {string} String HTML.
-   */
   _getEmptyStateHTML() {
     return `
             <div class="empty-state">
@@ -227,12 +179,6 @@ class TaskView {
         `;
   }
 
-  /**
-   * Mencegah XSS dengan meng-escape string HTML.
-   * @private
-   * @param {string} text - Teks mentah.
-   * @returns {string} Teks aman.
-   */
   _escapeHtml(text) {
     const div = document.createElement("div");
     div.textContent = text;

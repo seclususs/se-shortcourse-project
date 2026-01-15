@@ -1,50 +1,32 @@
-/**
- * Aplikasi Utama Day 2 - Implementasi MVC.
- * * @description Orchestrator utama yang menginisialisasi semua komponen (Storage, Repository, Controller, View) dan menangani event global.
- */
-
 const app = {
   storage: null,
   userRepository: null,
   taskRepository: null,
+  userService: null,
+  taskService: null,
   userController: null,
   taskController: null,
   taskView: null,
   currentUser: null,
 };
 
-/**
- * Menginisialisasi seluruh aplikasi.
- * Dipanggil saat DOM siap.
- */
 function initializeApp() {
-  console.log("🚀 Memulai Aplikasi Manajemen Tugas Day 2...");
-
+  console.log("🚀 Memulai Aplikasi Manajemen Tugas...");
   try {
-    // 1. Setup Layer Penyimpanan & Data
-    app.storage = new EnhancedStorageManager("taskAppDay2", "2.0");
+    app.storage = new StorageManager("taskApp", "2.0");
     app.userRepository = new UserRepository(app.storage);
     app.taskRepository = new TaskRepository(app.storage);
-
-    // 2. Setup Layer Logika (Controllers)
-    app.userController = new UserController(app.userRepository);
+    app.userService = new UserService(app.userRepository);
+    app.taskService = new TaskService(app.taskRepository, app.userRepository);
+    app.userController = new UserController(app.userService);
     app.taskController = new TaskController(
-      app.taskRepository,
-      app.userRepository
+      app.taskService,
+      app.userController
     );
-
-    // 3. Setup Layer Tampilan (View)
     app.taskView = new TaskView(app.taskController, app.userController);
-
-    // 4. Setup Event Listeners Global
     setupAuthEventListeners();
-
-    // 5. Buat data demo jika penyimpanan masih kosong
     createDemoDataIfNeeded();
-
-    // Tampilkan halaman login sebagai tampilan awal
     showLoginSection();
-
     console.log("✅ Aplikasi berhasil diinisialisasi!");
   } catch (error) {
     console.error("❌ Gagal inisialisasi:", error);
@@ -52,39 +34,29 @@ function initializeApp() {
   }
 }
 
-/**
- * Mengatur semua event listener untuk tombol dan form.
- */
 function setupAuthEventListeners() {
-  // Tombol Login
   document.getElementById("loginBtn")?.addEventListener("click", handleLogin);
 
-  // Tombol Register (Buka Modal)
   document.getElementById("registerBtn")?.addEventListener("click", () => {
     document.getElementById("registerModal").style.display = "flex";
   });
 
-  // Tombol Logout
   document.getElementById("logoutBtn")?.addEventListener("click", handleLogout);
 
-  // Form Registrasi
   document
     .getElementById("registerForm")
     ?.addEventListener("submit", handleRegister);
 
-  // Tutup Modal
   document
     .getElementById("closeRegisterModal")
     ?.addEventListener("click", () => {
       document.getElementById("registerModal").style.display = "none";
     });
 
-  // Form Buat Task
   document
     .getElementById("taskForm")
     ?.addEventListener("submit", handleCreateTask);
 
-  // Filter Kategori/Status
   document.querySelectorAll(".filter-btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       document
@@ -96,12 +68,10 @@ function setupAuthEventListeners() {
     });
   });
 
-  // Pencarian
   document.getElementById("searchInput")?.addEventListener("input", (e) => {
     const query = e.target.value;
     const response = app.taskController.searchTasks(query);
     if (response.success) {
-      // Render hasil pencarian secara manual ke list
       const tasksHTML = response.data
         .map((t) => app.taskView._createTaskHTML(t))
         .join("");
@@ -111,7 +81,6 @@ function setupAuthEventListeners() {
     }
   });
 
-  // Tombol Aksi Cepat: Overdue
   document.getElementById("showOverdueBtn")?.addEventListener("click", () => {
     const res = app.taskController.getOverdueTasks();
     if (res.success) {
@@ -134,7 +103,6 @@ function setupAuthEventListeners() {
     }
   });
 
-  // Tombol Aksi Cepat: Due Soon
   document.getElementById("showDueSoonBtn")?.addEventListener("click", () => {
     const res = app.taskController.getTasksDueSoon(3);
     if (res.success && res.data.length > 0) {
@@ -155,7 +123,6 @@ function setupAuthEventListeners() {
     }
   });
 
-  // Tombol Export Data
   document.getElementById("exportDataBtn")?.addEventListener("click", () => {
     const data = app.storage.exportData();
     const dataStr = JSON.stringify(data, null, 2);
@@ -170,15 +137,11 @@ function setupAuthEventListeners() {
   });
 }
 
-/**
- * Handler event login.
- */
 function handleLogin() {
   const username = document.getElementById("usernameInput").value;
   const response = app.userController.login(username);
   if (response.success) {
     app.currentUser = response.data;
-    app.taskController.setCurrentUser(app.currentUser.id);
     showMainContent();
     loadAssignees();
     app.taskView.refresh();
@@ -188,9 +151,6 @@ function handleLogin() {
   }
 }
 
-/**
- * Handler event logout.
- */
 function handleLogout() {
   app.userController.logout();
   app.currentUser = null;
@@ -198,10 +158,6 @@ function handleLogout() {
   app.taskView.showMessage("Berhasil logout", "info");
 }
 
-/**
- * Handler event registrasi user.
- * @param {Event} e - Event submit form.
- */
 function handleRegister(e) {
   e.preventDefault();
   const form = e.target;
@@ -221,10 +177,6 @@ function handleRegister(e) {
   }
 }
 
-/**
- * Handler event pembuatan task baru.
- * @param {Event} e - Event submit form.
- */
 function handleCreateTask(e) {
   e.preventDefault();
   const formData = new FormData(e.target);
@@ -252,10 +204,6 @@ function handleCreateTask(e) {
     app.taskView.showMessage(response.error, "error");
   }
 }
-
-// ==============================================================
-// Helper UI
-// ==============================================================
 
 function showLoginSection() {
   document.getElementById("loginSection").style.display = "flex";
@@ -308,5 +256,4 @@ function createDemoDataIfNeeded() {
   }
 }
 
-// Menjalankan inisialisasi saat DOM siap
 document.addEventListener("DOMContentLoaded", initializeApp);

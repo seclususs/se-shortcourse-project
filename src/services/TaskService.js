@@ -1,151 +1,107 @@
-/**
- * TaskService (Layanan Tugas)
- * Mengatur logika bisnis: menambah, mengubah, dan menghapus tugas.
- * Menghubungkan antara data (Task) dan penyimpanan (StorageManager).
- */
 class TaskService {
-  constructor(storageManager) {
-    this.storage = storageManager;
-    this.tasks = new Map(); // Daftar tugas sementara di memori
-    this.listeners = new Set(); // Pendengar acara (event listeners)
-
-    // Muat tugas yang tersimpan saat aplikasi dimulai
-    this._loadTasksFromStorage();
+  constructor(taskRepository, userRepository) {
+    this.taskRepository = taskRepository;
+    this.userRepository = userRepository;
   }
 
-  /**
-   * Membuat tugas baru
-   */
-  createTask(title, description, priority) {
-    try {
-      const task = new Task(title, description, priority);
-      this.tasks.set(task.id, task);
-      this._saveTasksToStorage();
-      this._notifyListeners("taskCreated", task);
-      return task;
-    } catch (error) {
-      console.error("Gagal membuat tugas:", error);
-      throw error;
+  createTask(taskData, currentUser) {
+    if (!currentUser) {
+      throw new Error("Silakan login terlebih dahulu");
     }
-  }
-
-  /**
-   * Mengambil semua tugas
-   */
-  getAllTasks() {
-    return Array.from(this.tasks.values());
-  }
-
-  /**
-   * Mengambil satu tugas berdasarkan ID
-   */
-  getTaskById(id) {
-    return this.tasks.get(id) || null;
-  }
-
-  /**
-   * Memperbarui tugas
-   */
-  updateTask(id, updates) {
-    const task = this.tasks.get(id);
-    if (!task) return null;
-    try {
-      if (updates.title !== undefined) task.updateTitle(updates.title);
-      if (updates.description !== undefined)
-        task.updateDescription(updates.description);
-      if (updates.priority !== undefined) task.updatePriority(updates.priority);
-      if (updates.completed !== undefined) {
-        if (updates.completed) task.markComplete();
-        else task.markIncomplete();
+    if (!taskData.title || taskData.title.trim() === "") {
+      throw new Error("Judul tugas wajib diisi");
+    }
+    const taskToCreate = {
+      ...taskData,
+      ownerId: currentUser.id,
+      assigneeId: taskData.assigneeId || currentUser.id,
+    };
+    if (taskToCreate.assigneeId !== currentUser.id) {
+      const assignee = this.userRepository.findById(taskToCreate.assigneeId);
+      if (!assignee) {
+        throw new Error("Pengguna yang ditugaskan tidak ditemukan");
       }
-      this._saveTasksToStorage();
-      this._notifyListeners("taskUpdated", task);
-      return task;
-    } catch (error) {
-      console.error("Gagal memperbarui tugas:", error);
-      throw error;
     }
+    return this.taskRepository.create(taskToCreate);
   }
 
-  /**
-   * Menghapus tugas
-   */
-  deleteTask(id) {
-    const task = this.tasks.get(id);
-    if (!task) return false;
-    this.tasks.delete(id);
-    this._saveTasksToStorage();
-    this._notifyListeners("taskDeleted", task);
+  getTasks(filters = {}, currentUser) {
+    if (!currentUser) {
+      throw new Error("Silakan login terlebih dahulu");
+    }
+    const userFilters = {
+      ...filters,
+      ownerId: currentUser.id,
+    };
+    let tasks = this.taskRepository.filter(userFilters);
+    const sortBy = filters.sortBy || "createdAt";
+    const sortOrder = filters.sortOrder || "desc";
+    tasks = this.taskRepository.sort(tasks, sortBy, sortOrder);
+    return { tasks, count: tasks.length };
+  }
+
+  toggleTaskStatus(taskId, currentUser) {
+    const task = this.taskRepository.findById(taskId);
+    if (!task) throw new Error("Tugas tidak ditemukan");
+    if (
+      !currentUser ||
+      (task.ownerId !== currentUser.id && task.assigneeId !== currentUser.id)
+    ) {
+      throw new Error("Anda tidak memiliki akses ke tugas ini");
+    }
+    const newStatus = task.isCompleted ? "pending" : "completed";
+    const updatedTask = this.taskRepository.update(taskId, {
+      status: newStatus,
+    });
+    return { updatedTask, newStatus };
+  }
+
+  deleteTask(taskId, currentUser) {
+    if (!currentUser) throw new Error("Login diperlukan");
+    const task = this.taskRepository.findById(taskId);
+    if (!task) throw new Error("Tugas tidak ditemukan");
+    if (task.ownerId !== currentUser.id) {
+      throw new Error("Hanya pemilik yang dapat menghapus tugas");
+    }
+    const deleted = this.taskRepository.delete(taskId);
+    if (!deleted) {
+      throw new Error("Gagal menghapus tugas");
+    }
     return true;
   }
 
-  /**
-   * Menghapus SEMUA tugas
-   */
-  clearAllTasks() {
-    this.tasks.clear();
-    this._saveTasksToStorage();
-    this._notifyListeners("allTasksCleared");
-    return true;
+  searchTasks(query, currentUser) {
+    if (!currentUser) throw new Error("Login diperlukan");
+    if (!query || query.trim() === "") throw new Error("Query kosong");
+    const allResults = this.taskRepository.search(query);
+    const userResults = allResults.filter(
+      (task) =>
+        task.ownerId === currentUser.id || task.assigneeId === currentUser.id
+    );
+    return userResults;
   }
 
-  /**
-   * Statistik Tugas (Jumlah total, selesai, tertunda)
-   */
-  getTaskStats() {
-    const allTasks = this.getAllTasks();
-    const completed = allTasks.filter((task) => task.completed);
-    const pending = allTasks.filter((task) => !task.completed);
-    const byPriority = {
-      high: allTasks.filter((task) => task.priority === "high").length,
-      medium: allTasks.filter((task) => task.priority === "medium").length,
-      low: allTasks.filter((task) => task.priority === "low").length,
-    };
-    return {
-      total: allTasks.length,
-      completed: completed.length,
-      pending: pending.length,
-      byPriority,
-    };
+  getTaskStats(currentUser) {
+    if (!currentUser) throw new Error("Login diperlukan");
+    const stats = this.taskRepository.getStats(currentUser.id);
+    return stats;
   }
 
-  // Menambah pendengar event (agar tampilan tahu kalau data berubah)
-  addListener(listener) {
-    this.listeners.add(listener);
+  getTasksDueSoon(currentUser) {
+    if (!currentUser) throw new Error("Login diperlukan");
+    const tasks = this.taskRepository.filter({ dueSoon: true });
+    const userTasks = tasks.filter((task) => task.ownerId === currentUser.id);
+    return userTasks;
   }
 
-  // Fungsi internal untuk memuat dari penyimpanan
-  _loadTasksFromStorage() {
-    const tasksData = this.storage.load("tasks", []);
-    tasksData.forEach((taskData) => {
-      try {
-        const task = Task.fromJSON(taskData);
-        this.tasks.set(task.id, task);
-      } catch (error) {
-        console.error("Gagal memuat tugas:", error);
-      }
-    });
-  }
-
-  // Fungsi internal untuk menyimpan ke penyimpanan
-  _saveTasksToStorage() {
-    const tasksData = this.getAllTasks().map((task) => task.toJSON());
-    this.storage.save("tasks", tasksData);
-  }
-
-  // Memberitahu pendengar bahwa ada perubahan
-  _notifyListeners(eventType, data) {
-    this.listeners.forEach((listener) => {
-      try {
-        listener(eventType, data);
-      } catch (error) {
-        console.error("Error pada listener:", error);
-      }
-    });
+  getOverdueTasks(currentUser) {
+    if (!currentUser) throw new Error("Login diperlukan");
+    const tasks = this.taskRepository.filter({ overdue: true });
+    const userTasks = tasks.filter((task) => task.ownerId === currentUser.id);
+    return userTasks;
   }
 }
 
-// Ekspor
 if (typeof module !== "undefined" && module.exports) {
   module.exports = TaskService;
 } else {

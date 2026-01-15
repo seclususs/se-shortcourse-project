@@ -1,10 +1,4 @@
-/**
- * Test Data Factory - Helper untuk membuat test data
- */
 class TestDataFactory {
-  /**
-   * Buat data user yang valid untuk testing
-   */
   static createValidUserData(overrides = {}) {
     return {
       username: "testuser",
@@ -14,9 +8,6 @@ class TestDataFactory {
     };
   }
 
-  /**
-   * Buat data task yang valid untuk testing
-   */
   static createValidTaskData(overrides = {}) {
     return {
       title: "Test Task",
@@ -28,9 +19,6 @@ class TestDataFactory {
     };
   }
 
-  /**
-   * Buat multiple tasks untuk testing
-   */
   static createMultipleTasks(count = 3, baseData = {}) {
     return Array.from({ length: count }, (_, i) =>
       this.createValidTaskData({
@@ -41,12 +29,8 @@ class TestDataFactory {
     );
   }
 
-  /**
-   * Buat mock storage untuk testing
-   */
   static createMockStorage() {
     const storage = new Map();
-
     return {
       save: jest.fn((key, data) => {
         storage.set(key, JSON.stringify(data));

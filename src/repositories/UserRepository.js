@@ -4,28 +4,14 @@ if (typeof require !== "undefined" && typeof module !== "undefined") {
   }
 }
 
-/**
- * User Repository - Lapisan abstraksi data untuk entitas User.
- * @class UserRepository
- * @description Mengelola operasi CRUD dan query untuk data pengguna, memisahkan logika bisnis dari detail penyimpanan.
- */
 class UserRepository {
-  /**
-   * @param {EnhancedStorageManager} storageManager - Instance manajer penyimpanan.
-   */
   constructor(storageManager) {
     this.storage = storageManager;
-    this.users = new Map(); // Cache in-memory
+    this.users = new Map();
     this.storageKey = "users";
     this._loadUsersFromStorage();
   }
 
-  /**
-   * Membuat pengguna baru dan menyimpannya.
-   * @param {Object} userData - Data mentah pengguna (username, email, fullName).
-   * @returns {User} Instance User yang berhasil dibuat.
-   * @throws {Error} Jika username atau email sudah terdaftar.
-   */
   create(userData) {
     try {
       if (this.findByUsername(userData.username)) {
@@ -48,20 +34,10 @@ class UserRepository {
     }
   }
 
-  /**
-   * Mencari pengguna berdasarkan ID.
-   * @param {string} id - ID pengguna.
-   * @returns {User|null} Objek User atau null jika tidak ditemukan.
-   */
   findById(id) {
     return this.users.get(id) || null;
   }
 
-  /**
-   * Mencari pengguna berdasarkan username.
-   * @param {string} username - Username yang dicari (case-insensitive).
-   * @returns {User|null} Objek User atau null.
-   */
   findByUsername(username) {
     const normalizedUsername = username.toLowerCase();
     for (const user of this.users.values()) {
@@ -72,11 +48,6 @@ class UserRepository {
     return null;
   }
 
-  /**
-   * Mencari pengguna berdasarkan email.
-   * @param {string} email - Email yang dicari (case-insensitive).
-   * @returns {User|null} Objek User atau null.
-   */
   findByEmail(email) {
     const normalizedEmail = email.toLowerCase();
     for (const user of this.users.values()) {
@@ -87,27 +58,14 @@ class UserRepository {
     return null;
   }
 
-  /**
-   * Mengambil daftar semua pengguna.
-   * @returns {User[]} Array berisi semua objek User.
-   */
   findAll() {
     return Array.from(this.users.values());
   }
 
-  /**
-   * Mengambil daftar pengguna yang statusnya aktif.
-   * @returns {User[]} Array objek User aktif.
-   */
   findActive() {
     return this.findAll().filter((user) => user.isActive);
   }
 
-  /**
-   * Mencatat aktivitas login pengguna dan menyimpan perubahan.
-   * @param {string} id - ID pengguna.
-   * @returns {User|null} Pengguna yang diperbarui atau null.
-   */
   recordLogin(id) {
     const user = this.findById(id);
     if (user) {
@@ -116,10 +74,6 @@ class UserRepository {
     }
     return user;
   }
-
-  // ==============================================================
-  // Private Methods
-  // ==============================================================
 
   _loadUsersFromStorage() {
     try {

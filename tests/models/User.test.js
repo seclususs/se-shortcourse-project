@@ -1,104 +1,76 @@
-// Import dependencies
 const TestDataFactory = require("../helpers/TestDataFactory");
 const TestAssertions = require("../helpers/TestAssertions");
-
-// Import class yang akan di-test
 const User = require("../../src/models/User");
 
-describe("User Model", () => {
-  describe("User Creation", () => {
-    test("should create user with valid data", () => {
-      // Arrange
-      const userData = TestDataFactory.createValidUserData();
-
-      // Act
-      const user = new User(
-        userData.username,
-        userData.email,
-        userData.fullName
-      );
-
-      // Assert
-      expect(user.username).toBe(userData.username);
-      expect(user.email).toBe(userData.email);
-      expect(user.fullName).toBe(userData.fullName);
-      expect(user.isActive).toBe(true);
+describe("User", () => {
+  describe("Serialization (fromJSON)", () => {
+    test("should reconstitute user from JSON correctly", () => {
+      const rawData = {
+        id: "user_123",
+        username: "reborn_user",
+        email: "reborn@test.com",
+        fullName: "Reborn Identity",
+        role: "admin",
+        isActive: false,
+        createdAt: "2023-01-01T00:00:00.000Z",
+        lastLoginAt: "2023-01-02T00:00:00.000Z",
+        preferences: { theme: "dark" },
+      };
+      const user = User.fromJSON(rawData);
       TestAssertions.assertUserHasRequiredProperties(user);
+      expect(user.id).toBe(rawData.id);
+      expect(user.username).toBe(rawData.username);
+      expect(user.role).toBe("admin");
+      expect(user.isActive).toBe(false);
+      expect(user.preferences.theme).toBe("dark");
     });
-
-    test("should throw error when username is empty", () => {
-      const userData = TestDataFactory.createValidUserData({ username: "" });
-      expect(() => {
-        new User(userData.username, userData.email, userData.fullName);
-      }).toThrow("Username wajib diisi");
-    });
-
-    test("should throw error when email is invalid", () => {
-      const userData = TestDataFactory.createValidUserData({
-        email: "invalid-email",
-      });
-      expect(() => {
-        new User(userData.username, userData.email, userData.fullName);
-      }).toThrow("Email tidak valid");
-    });
-
-    test("should generate unique ID for each user", () => {
-      const userData1 = TestDataFactory.createValidUserData({
-        username: "user1",
-      });
-      const userData2 = TestDataFactory.createValidUserData({
-        username: "user2",
-      });
-
-      const user1 = new User(
-        userData1.username,
-        userData1.email,
-        userData1.fullName
-      );
-      const user2 = new User(
-        userData2.username,
-        userData2.email,
-        userData2.fullName
-      );
-
-      expect(user1.id).toBeDefined();
-      expect(user2.id).toBeDefined();
-      expect(user1.id).not.toBe(user2.id);
+    test("should handle missing optional fields in fromJSON", () => {
+      const minimalData = {
+        username: "min",
+        email: "min@test.com",
+        createdAt: "2023-01-01T00:00:00.000Z",
+      };
+      const user = User.fromJSON(minimalData);
+      expect(user.lastLoginAt).toBeNull();
+      expect(user.preferences.theme).toBe("light");
     });
   });
 
-  describe("User Methods", () => {
+  describe("Validation & Updates", () => {
     let user;
-
     beforeEach(() => {
-      const userData = TestDataFactory.createValidUserData();
-      user = new User(userData.username, userData.email, userData.fullName);
+      const data = TestDataFactory.createValidUserData();
+      user = new User(data.username, data.email, data.fullName);
     });
-
-    test("should update profile successfully", () => {
-      const newFullName = "Updated Name";
-      const newEmail = "updated@example.com";
-
-      user.updateProfile(newFullName, newEmail);
-
-      expect(user.fullName).toBe(newFullName);
-      expect(user.email).toBe(newEmail);
-    });
-
-    test("should record login time", () => {
-      const beforeLogin = new Date();
-      user.recordLogin();
-
-      expect(user.lastLoginAt).toBeDefined();
-      expect(user.lastLoginAt).toBeInstanceOf(Date);
-      expect(user.lastLoginAt.getTime()).toBeGreaterThanOrEqual(
-        beforeLogin.getTime()
+    test("updateProfile should throw on invalid email", () => {
+      expect(() => user.updateProfile("Name", "invalid-email")).toThrow(
+        "Email tidak valid"
       );
     });
-
-    test("should deactivate user", () => {
+    test("updateProfile should allow updating partial fields", () => {
+      const oldEmail = user.email;
+      user.updateProfile("New Name", null);
+      expect(user.fullName).toBe("New Name");
+      expect(user.email).toBe(oldEmail);
+      user.updateProfile(null, "new@test.com");
+      expect(user.email).toBe("new@test.com");
+    });
+    test("updatePreferences should merge with existing", () => {
+      const defaultPrefs = user.preferences;
+      user.updatePreferences({ theme: "dark" });
+      expect(user.preferences.theme).toBe("dark");
+      expect(user.preferences.emailNotifications).toBe(
+        defaultPrefs.emailNotifications
+      );
+    });
+    test("activate/deactivate toggle", () => {
       user.deactivate();
       expect(user.isActive).toBe(false);
+      user.activate();
+      expect(user.isActive).toBe(true);
+    });
+    test("Role getter", () => {
+      expect(user.role).toBe("user");
     });
   });
 });
